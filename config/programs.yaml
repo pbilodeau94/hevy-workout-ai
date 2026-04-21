@@ -1,0 +1,346 @@
+# =============================================================================
+# TARGET: ~50 minutes per session, hypertrophy focus, chest priority
+# RULES: Always 3 sets per exercise. Never 4. Bilateral only.
+# =============================================================================
+#
+# Time budget per exercise (avg):
+#   Upper compound (90s rest):   3x35s + 2x90s + 30s transition = ~5.25 min
+#   Lower compound (120s rest):  3x35s + 2x120s + 30s           = ~6.25 min
+#   Isolation (60s rest):        3x25s + 2x60s + 30s            = ~3.75 min
+#
+# =============================================================================
+
+# =============================================================================
+# UPPER / LOWER / FULL (upper-skewed) — 3x/week at commercial gym
+# Schedule: Tue=Lower, Thu=Full (upper-skewed), Sun=Upper
+# Rationale: Tue LB + frequent cycling loads legs enough that Thu FB
+#            keeps legs light and emphasizes upper volume.
+# =============================================================================
+
+upper_lower_full:
+  description: "Upper / Lower / Full-upper-skewed, 3x/week, ~50 min. Commercial gym."
+
+  upper:
+    name: "Upper Body"
+    focus: "Chest priority + back, shoulders, arms"
+    # 7 exercises, ~50 min (was 10 — trimmed for time budget)
+    exercises:
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [6, 10]
+        rest_key: upper_compound
+
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [6, 10]
+        rest_key: upper_compound
+
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: shoulders
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: biceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+      - muscle: triceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+  lower:
+    name: "Lower Body"
+    focus: "Quads, glutes, hamstrings, calves, core"
+    # 6 exercises, ~50 min (was 8 — trimmed for time budget)
+    exercises:
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [6, 10]
+        rest_key: lower_compound
+
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [12, 15]
+        rest_key: lower_isolation
+
+      - muscle: calves
+        pick: 1
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: lower_isolation
+
+      - muscle: core
+        pick: 1
+        sets: 3
+        rep_range: [12, 20]
+        rest_key: lower_isolation
+
+  full_body_upper_skewed:
+    name: "Full Body (Upper-Skewed)"
+    focus: "Upper volume + light legs (legs taxed by Tue LB + cycling)"
+    # 7 exercises, ~50 min (was 10 — trimmed for time budget)
+    exercises:
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: chest
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: shoulders
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+
+      - muscle: biceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+      - muscle: triceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [12, 15]
+        rest_key: lower_isolation
+
+  # Training days (Tue=1, Thu=3, Sun=6) map to rotation in order:
+  # Tue -> lower, Thu -> full_body_upper_skewed, Sun -> upper
+  rotation: [lower, full_body_upper_skewed, upper]
+
+# =============================================================================
+# LEGACY: Full Body (home gym, phase 1) — kept for reference
+# =============================================================================
+
+full_body:
+  description: "Full body 3x/week, hypertrophy, chest priority. ~40 min sessions."
+
+  day_a:
+    name: "Full Body A"
+    focus: "Chest focus + pull + quads"
+    exercises:
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: chest
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: shoulders
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [12, 15]
+        rest_key: upper_isolation
+      - muscle: triceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+      - muscle: core
+        pick: 1
+        sets: 3
+        rep_range: [12, 20]
+        rest_key: lower_isolation
+
+  rotation: [day_a]
+
+# =============================================================================
+# LEGACY: Upper / Lower (home gym, phase 2) — kept for reference
+# =============================================================================
+
+upper_lower:
+  description: "Rotating Upper/Lower, ~40 min sessions. (Home gym legacy)"
+
+  upper:
+    name: "Upper Body"
+    focus: "Chest priority + back, shoulders, arms"
+    exercises:
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: chest
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: chest
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: back
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: upper_compound
+      - muscle: shoulders
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [12, 15]
+        rest_key: upper_isolation
+      - muscle: biceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+      - muscle: triceps
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [10, 15]
+        rest_key: upper_isolation
+
+  lower:
+    name: "Lower Body"
+    focus: "Quads, glutes, hamstrings, core"
+    exercises:
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: glutes_hams
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+      - muscle: shoulders
+        pick: 1
+        prefer: [isolation]
+        sets: 3
+        rep_range: [12, 15]
+        rest_key: upper_isolation
+      - muscle: core
+        pick: 1
+        sets: 3
+        rep_range: [12, 20]
+        rest_key: lower_isolation
+      - muscle: core
+        pick: 1
+        sets: 3
+        rep_range: [12, 20]
+        rest_key: lower_isolation
+
+  rotation: [upper, lower, upper, lower, upper, lower]

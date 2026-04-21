@@ -1,0 +1,8 @@
+current_block: 4
+current_week_in_block: 1
+block_length_weeks: 4
+training_days:
+- 1
+- 3
+- 6
+last_push: '2026-04-20'

@@ -1,0 +1,475 @@
+# Commercial gym exercise pool (Lynx Fitness Gym)
+# Each exercise maps to a real Hevy exercise_template_id
+# Tags: compound | isolation | bodyweight
+# BILATERAL ONLY — no single-leg/balance work (vestibular dysfunction)
+
+# =============================================================================
+# CHEST (priority muscle)
+# =============================================================================
+chest:
+  - id: "79D0BB3A"
+    name: Bench Press (Barbell)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "50DFDFAB"
+    name: Incline Bench Press (Barbell)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "3601968B"
+    name: Bench Press (Dumbbell)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "07B38369"
+    name: Incline Bench Press (Dumbbell)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "7EB3F7C3"
+    name: Chest Press (Machine)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "FBF92739"
+    name: Incline Chest Press (Machine)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "24706DCD"
+    name: Iso-Lateral Chest Press (Machine)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "0FBF7195"
+    name: Bench Press (Smith Machine)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "3A6FA3D1"
+    name: Incline Bench Press (Smith Machine)
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "6FCD7755"
+    name: Chest Dip
+    tag: compound
+    secondary: [triceps, shoulders]
+
+  - id: "9DCE2D64"
+    name: Butterfly (Pec Deck)
+    tag: isolation
+    secondary: []
+
+  - id: "651F844C"
+    name: Cable Fly Crossovers
+    tag: isolation
+    secondary: []
+
+  - id: "12017185"
+    name: Chest Fly (Dumbbell)
+    tag: isolation
+    secondary: []
+
+  - id: "D3E2AB55"
+    name: Incline Chest Fly (Dumbbell)
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# BACK (lats + upper back)
+# =============================================================================
+back:
+  - id: "6A6C31A5"
+    name: Lat Pulldown (Cable)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "4E5257DE"
+    name: Lat Pulldown - Close Grip (Cable)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "1B2B1E7C"
+    name: Pull Up
+    tag: compound
+    secondary: [biceps]
+
+  - id: "55E6546F"
+    name: Bent Over Row (Barbell)
+    tag: compound
+    secondary: [biceps, lower_back]
+
+  - id: "08A2974E"
+    name: T Bar Row
+    tag: compound
+    secondary: [biceps]
+
+  - id: "0393F233"
+    name: Seated Cable Row - V Grip
+    tag: compound
+    secondary: [biceps]
+
+  - id: "F1D60854"
+    name: Seated Cable Row - Bar Grip
+    tag: compound
+    secondary: [biceps]
+
+  - id: "AA1EB7D8"
+    name: Iso-Lateral Row (Machine)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "BC3492DA"
+    name: Iso-Lateral High Row (Machine)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "91FAFBA3"
+    name: Iso-Lateral Low Row
+    tag: compound
+    secondary: [biceps]
+
+  - id: "1DF4A847"
+    name: Seated Row (Machine)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "B123DD01"
+    name: Pullover (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "23E92538"
+    name: Bent Over Row (Dumbbell)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "914F3A96"
+    name: Chest Supported Incline Row (Dumbbell)
+    tag: compound
+    secondary: [biceps]
+
+  - id: "D2387AB1"
+    name: Straight Arm Lat Pulldown (Cable)
+    tag: isolation
+    secondary: []
+
+  - id: "9273BA17"
+    name: Rope Straight Arm Pulldown
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# SHOULDERS
+# =============================================================================
+shoulders:
+  - id: "7B8D84E8"
+    name: Overhead Press (Barbell)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "6AC96645"
+    name: Overhead Press (Dumbbell)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "9930DF71"
+    name: Seated Overhead Press (Dumbbell)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "9237BAD1"
+    name: Seated Shoulder Press (Machine)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "059E835D"
+    name: Shoulder Press (Machine Plates)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "B09A1304"
+    name: Overhead Press (Smith Machine)
+    tag: compound
+    secondary: [triceps]
+
+  - id: "BE289E45"
+    name: Lateral Raise (Cable)
+    tag: isolation
+    secondary: []
+
+  - id: "422B08F1"
+    name: Lateral Raise (Dumbbell)
+    tag: isolation
+    secondary: []
+
+  - id: "D5D0354D"
+    name: Lateral Raise (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "BE640BA0"
+    name: Face Pull
+    tag: isolation
+    secondary: [upper_back]
+
+  - id: "D8281C62"
+    name: Rear Delt Reverse Fly (Machine)
+    tag: isolation
+    secondary: [upper_back]
+
+  - id: "C315DC2A"
+    name: Rear Delt Reverse Fly (Cable)
+    tag: isolation
+    secondary: [upper_back]
+
+  - id: "B582299E"
+    name: Chest Supported Reverse Fly (Dumbbell)
+    tag: isolation
+    secondary: [upper_back]
+
+# =============================================================================
+# QUADS — bilateral only (no lunges, split squats, pistols)
+# =============================================================================
+quads:
+  - id: "D04AC939"
+    name: Squat (Barbell)
+    tag: compound
+    secondary: [glutes, hamstrings]
+
+  - id: "C7973E0E"
+    name: Leg Press (Machine)
+    tag: compound
+    secondary: [glutes, hamstrings]
+
+  - id: "1E42FD5F"
+    name: Hack Squat (Machine)
+    tag: compound
+    secondary: [glutes, hamstrings]
+
+  - id: "DDCC3821"
+    name: Squat (Smith Machine)
+    tag: compound
+    secondary: [glutes, hamstrings]
+
+  - id: "75A4F6C4"
+    name: Leg Extension (Machine)
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# GLUTES / HAMSTRINGS
+# =============================================================================
+glutes_hams:
+  - id: "2B4B7310"
+    name: Romanian Deadlift (Barbell)
+    tag: compound
+    secondary: [glutes, lower_back]
+
+  - id: "72CFFAD5"
+    name: Romanian Deadlift (Dumbbell)
+    tag: compound
+    secondary: [glutes, lower_back]
+
+  - id: "2A48E443"
+    name: Straight Leg Deadlift
+    tag: compound
+    secondary: [glutes, lower_back]
+
+  - id: "D57C2EC7"
+    name: Hip Thrust (Barbell)
+    tag: compound
+    secondary: [hamstrings]
+
+  - id: "68CE0B9B"
+    name: Hip Thrust (Machine)
+    tag: compound
+    secondary: [hamstrings]
+
+  - id: "8C331CD8"
+    name: Cable Pull Through
+    tag: compound
+    secondary: [hamstrings, lower_back]
+
+  - id: "B8127AD1"
+    name: Lying Leg Curl (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "11A123F3"
+    name: Seated Leg Curl (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "4F5866F8"
+    name: Back Extension (Hyperextension)
+    tag: compound
+    secondary: [lower_back, glutes]
+
+  - id: "F4B4C6EE"
+    name: Hip Abduction (Machine)
+    tag: isolation
+    secondary: [glutes]
+
+  - id: "8BEBFED6"
+    name: Hip Adduction (Machine)
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# BICEPS
+# =============================================================================
+biceps:
+  - id: "A5AC6449"
+    name: Bicep Curl (Barbell)
+    tag: isolation
+    secondary: []
+
+  - id: "01A35BF9"
+    name: EZ Bar Biceps Curl
+    tag: isolation
+    secondary: []
+
+  - id: "37FCC2BB"
+    name: Bicep Curl (Dumbbell)
+    tag: isolation
+    secondary: []
+
+  - id: "ADA8623C"
+    name: Bicep Curl (Cable)
+    tag: isolation
+    secondary: []
+
+  - id: "7E3BC8B6"
+    name: Hammer Curl (Dumbbell)
+    tag: isolation
+    secondary: [forearms]
+
+  - id: "36E8F14E"
+    name: Hammer Curl (Cable)
+    tag: isolation
+    secondary: [forearms]
+
+  - id: "4F942934"
+    name: Preacher Curl (Barbell)
+    tag: isolation
+    secondary: []
+
+  - id: "1E9A6B8E"
+    name: Preacher Curl (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "8BAB2735"
+    name: Seated Incline Curl (Dumbbell)
+    tag: isolation
+    secondary: []
+
+  - id: "2348AB72"
+    name: Spider Curl (Barbell)
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# TRICEPS
+# =============================================================================
+triceps:
+  - id: "93A552C6"
+    name: Triceps Pushdown
+    tag: isolation
+    secondary: []
+
+  - id: "94B7239B"
+    name: Triceps Rope Pushdown
+    tag: isolation
+    secondary: []
+
+  - id: "B5EFBF9C"
+    name: Overhead Triceps Extension (Cable)
+    tag: isolation
+    secondary: []
+
+  - id: "35B51B87"
+    name: Bench Press - Close Grip (Barbell)
+    tag: compound
+    secondary: [chest, shoulders]
+
+  - id: "28BB4A95"
+    name: Triceps Dip
+    tag: compound
+    secondary: [chest, shoulders]
+
+  - id: "5122E7D9"
+    name: Seated Dip Machine
+    tag: compound
+    secondary: [chest, shoulders]
+
+  - id: "875F585F"
+    name: Skullcrusher (Barbell)
+    tag: isolation
+    secondary: []
+
+  - id: "68F8A292"
+    name: Skullcrusher (Dumbbell)
+    tag: isolation
+    secondary: []
+
+  - id: "3765684D"
+    name: Triceps Extension (Dumbbell)
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# CALVES
+# =============================================================================
+calves:
+  - id: "E05C2C38"
+    name: Standing Calf Raise (Machine)
+    tag: isolation
+    secondary: []
+
+  - id: "062AB91A"
+    name: Seated Calf Raise
+    tag: isolation
+    secondary: []
+
+# =============================================================================
+# CORE
+# =============================================================================
+core:
+  - id: "23A48484"
+    name: Cable Crunch
+    tag: isolation
+    secondary: []
+
+  - id: "F8356514"
+    name: Hanging Leg Raise
+    tag: bodyweight
+    secondary: []
+
+  - id: "08590920"
+    name: Hanging Knee Raise
+    tag: bodyweight
+    secondary: []
+
+  - id: "C6C9B8A0"
+    name: Plank
+    tag: bodyweight
+    secondary: []
+
+  - id: "D8911FC4"
+    name: Dead Bug
+    tag: bodyweight
+    secondary: []
+
+  - id: "7952B5CD"
+    name: Reverse Crunch
+    tag: bodyweight
+    secondary: []
+
+  - id: "E3EDA509"
+    name: Side Plank
+    tag: bodyweight
+    secondary: []

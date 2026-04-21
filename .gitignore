@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+*.egg
+.whoop_tokens.json
+config/recovery.yaml
+.mcp.json
+.DS_Store
+logs/
+*.jpeg
+*.jpg
+*.png

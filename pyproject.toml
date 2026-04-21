@@ -1,0 +1,21 @@
+[project]
+name = "hevy-workout-ai"
+version = "0.1.0"
+description = "AI-powered workout generator that pushes to Hevy"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "click>=8.1",
+]
+
+[project.scripts]
+hevy = "hevy_workout_ai.cli:cli"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

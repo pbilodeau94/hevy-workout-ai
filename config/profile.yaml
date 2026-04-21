@@ -1,0 +1,69 @@
+# === User Profile ===
+unit_system: imperial  # imperial | metric
+
+# === Limitations ===
+# Vestibular dysfunction — no single-leg/balance exercises
+# (no lunges, split squats, step ups, single-leg RDLs, etc.)
+avoid_tags: [single_leg, balance]
+
+# === Available Equipment ===
+# Lynx Fitness Gym (commercial): barbells, dumbbells, cables, machines,
+# benches, squat rack, hack squat, leg press, pec deck, etc.
+equipment:
+  - commercial_gym
+  - barbell
+  - dumbbells
+  - cables
+  - machines
+  - flat_bench
+  - incline_bench
+  - squat_rack
+
+# Dumbbell weight range (kept for weight-estimator fallback snapping)
+dumbbell_range:
+  min_lb: 5
+  max_lb: 120
+  increment_lb: 5
+
+# Smith machine bar weight at Lynx (counterweighted — NOT 45 lb).
+# Used for conversion math. TODO: weigh the Lynx Smith bar; commonly 15-25 lb.
+smith_bar_weight_lb: null
+
+# === Training Preferences ===
+training:
+  days_per_week: 3
+  session_duration_minutes: 50
+  goal: hypertrophy
+  experience_level: intermediate  # beginner | intermediate | advanced
+
+  # Current phase: Upper / Lower / Full-upper-skewed at commercial gym.
+  current_phase: upper_lower_full
+  phase_started_week: 1
+
+  # Sets: always 3 per exercise, never 4
+  sets_per_exercise: 3
+
+  # Rest periods (seconds)
+  rest:
+    upper_compound: 90      # bench, row, OHP
+    upper_isolation: 60     # curls, laterals, extensions
+    lower_compound: 120     # squat, RDL, leg press
+    lower_isolation: 60     # calves, core, leg curl/ext
+
+  # RPE targets by phase
+  rpe:
+    full_body: 7            # leave 3 reps in reserve
+    upper_lower: 8          # leave 2 reps in reserve
+    upper_lower_full: 8     # leave 2 reps in reserve
+
+# === Cardio (Peloton + outdoor) ===
+# No Hevy routines for cardio — calendar events only.
+cardio:
+  # Days of week for cardio (0=Mon, 6=Sun)
+  days: [0, 2, 5]           # Mon, Wed, Sat
+  default_duration_min: 45  # build-up phase: 45 min minimum
+  # Saturday long ride (Peloton long or outdoor)
+  long_ride_weekday: 5
+  long_ride_duration_min: 60
+  build_up_phase_weeks: 8
+  hour: 18                  # 6pm default (user picks specific ride same-day)
