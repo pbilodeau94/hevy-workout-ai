@@ -8,6 +8,7 @@ build/
 *.egg
 .whoop_tokens.json
 config/recovery.yaml
+config/nutrition_log.yaml
 .mcp.json
 .DS_Store
 logs/

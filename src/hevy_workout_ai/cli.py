@@ -11,6 +11,7 @@ from .calendar import schedule_block, schedule_cardio_block
 from .config import load_profile, load_state, save_state
 from .generator import generate_routine, generate_week_routines, preview_routine
 from .hevy_client import create_routine
+from .nutrition import estimate_maintenance, get_nutrition_adjustment, log_today
 from .recovery import RECOVERY_FILE, get_recovery_adjustment
 
 
@@ -60,13 +61,45 @@ def whoop_auth():
 
 @cli.command()
 def recovery():
-    """Show today's recovery adjustment (Whoop or manual recovery.yaml)."""
+    """Show today's recovery adjustment (Whoop/manual + nutrition)."""
     adj = get_recovery_adjustment()
+    nut = get_nutrition_adjustment()
     click.echo(f"  Score:     {adj.score:.0f}  ({adj.band})")
     click.echo(f"  Source:    {adj.source}")
     click.echo(f"  Load mult: x{adj.load_mult}")
     click.echo(f"  Set delta: {adj.set_delta:+d}")
     click.echo(f"  Note:      {adj.note}")
+    click.echo("")
+    click.echo("  Nutrition:")
+    if nut.calories_today is not None:
+        click.echo(f"    Intake:      {nut.calories_today:.0f} kcal")
+    if nut.maintenance_kcal is not None:
+        click.echo(f"    Maintenance: {nut.maintenance_kcal:.0f} kcal (rolling 14d)")
+    if nut.deficit_kcal is not None:
+        click.echo(f"    Balance:     {nut.deficit_kcal:+.0f} kcal")
+    if nut.protein_per_lb is not None:
+        click.echo(f"    Protein:     {nut.protein_today:.0f} g ({nut.protein_per_lb:.2f} g/lb)")
+    if nut.bodyweight_today is not None:
+        click.echo(f"    Bodyweight:  {nut.bodyweight_today:.1f} lb")
+    if nut.calories_today is None and nut.protein_today is None and nut.bodyweight_today is None:
+        click.echo("    (no data logged today — run 'hevy-ai log-nutrition')")
+
+
+@cli.command(name="log-nutrition")
+@click.option("--bodyweight", type=float, help="Bodyweight (lb)")
+@click.option("--calories", type=float, help="Calories consumed (kcal)")
+@click.option("--protein", type=float, help="Protein (g)")
+def log_nutrition(bodyweight: float | None, calories: float | None, protein: float | None):
+    """Log today's nutrition (upsert). Pipe from Apple Health via Claude iOS."""
+    if bodyweight is None and calories is None and protein is None:
+        raise click.UsageError("Provide at least one of --bodyweight, --calories, --protein")
+    entry = log_today(bodyweight_lb=bodyweight, calories_kcal=calories, protein_g=protein)
+    click.echo(f"  Logged {entry['date']}: {entry}")
+    maint = estimate_maintenance()
+    if maint is not None:
+        click.echo(f"  Rolling maintenance: {maint:.0f} kcal")
+    else:
+        click.echo("  Maintenance: need 7+ days of data")
 
 
 @cli.command(name="set-recovery")

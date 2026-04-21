@@ -108,12 +108,26 @@ def _read_whoop() -> RecoveryAdjustment | None:
 
 
 def get_recovery_adjustment() -> RecoveryAdjustment:
-    """Return today's recovery adjustment, falling back to neutral."""
-    return (
+    """Return today's combined recovery + nutrition adjustment, fallback neutral."""
+    base = (
         _read_manual()
         or _read_whoop()
         or RecoveryAdjustment(
             score=50.0, band="yellow", load_mult=1.0, set_delta=0,
             source="default", note="No recovery data — neutral (yellow)",
         )
+    )
+
+    from .nutrition import get_nutrition_adjustment
+    nut = get_nutrition_adjustment()
+    if nut.set_delta == 0 and not nut.notes:
+        return base
+
+    return RecoveryAdjustment(
+        score=base.score,
+        band=base.band,
+        load_mult=base.load_mult,
+        set_delta=base.set_delta + nut.set_delta,
+        source=base.source,
+        note=base.note + " | nutrition: " + (", ".join(nut.notes) if nut.notes else "ok"),
     )
