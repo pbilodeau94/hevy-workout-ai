@@ -120,7 +120,15 @@ def get_recovery_adjustment() -> RecoveryAdjustment:
 
     from .nutrition import get_nutrition_adjustment
     nut = get_nutrition_adjustment()
-    if nut.set_delta == 0 and not nut.notes:
+
+    bits: list[str] = []
+    if nut.protein_target_g is not None:
+        day_label = "lift" if nut.is_lifting_day else "rest"
+        intake = f"{nut.protein_today:.0f}" if nut.protein_today is not None else "?"
+        bits.append(f"protein {intake}/{nut.protein_target_g:.0f}g ({day_label} day)")
+    bits.extend(nut.notes)
+
+    if not bits and nut.set_delta == 0:
         return base
 
     return RecoveryAdjustment(
@@ -129,5 +137,5 @@ def get_recovery_adjustment() -> RecoveryAdjustment:
         load_mult=base.load_mult,
         set_delta=base.set_delta + nut.set_delta,
         source=base.source,
-        note=base.note + " | nutrition: " + (", ".join(nut.notes) if nut.notes else "ok"),
+        note=base.note + " | nutrition: " + (", ".join(bits) if bits else "ok"),
     )

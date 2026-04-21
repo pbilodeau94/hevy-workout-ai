@@ -59,6 +59,13 @@ def whoop_auth():
     authorize()
 
 
+@cli.command(name="strava-auth")
+def strava_auth():
+    """One-time OAuth flow for Strava. Opens browser, captures code."""
+    from .strava_client import authorize
+    authorize()
+
+
 @cli.command()
 def recovery():
     """Show today's recovery adjustment (Whoop/manual + nutrition)."""
@@ -77,8 +84,11 @@ def recovery():
         click.echo(f"    Maintenance: {nut.maintenance_kcal:.0f} kcal (rolling 14d)")
     if nut.deficit_kcal is not None:
         click.echo(f"    Balance:     {nut.deficit_kcal:+.0f} kcal")
-    if nut.protein_per_lb is not None:
-        click.echo(f"    Protein:     {nut.protein_today:.0f} g ({nut.protein_per_lb:.2f} g/lb)")
+    if nut.protein_target_g is not None:
+        day_label = "lift" if nut.is_lifting_day else "rest"
+        intake = f"{nut.protein_today:.0f}" if nut.protein_today is not None else "?"
+        gap = f", gap {nut.protein_gap_g:.0f}g" if nut.protein_gap_g and nut.protein_gap_g > 0 else ""
+        click.echo(f"    Protein:     {intake} / {nut.protein_target_g:.0f} g target ({day_label} day{gap})")
     if nut.bodyweight_today is not None:
         click.echo(f"    Bodyweight:  {nut.bodyweight_today:.1f} lb")
     if nut.calories_today is None and nut.protein_today is None and nut.bodyweight_today is None:
@@ -89,11 +99,12 @@ def recovery():
 @click.option("--bodyweight", type=float, help="Bodyweight (lb)")
 @click.option("--calories", type=float, help="Calories consumed (kcal)")
 @click.option("--protein", type=float, help="Protein (g)")
-def log_nutrition(bodyweight: float | None, calories: float | None, protein: float | None):
-    """Log today's nutrition (upsert). Pipe from Apple Health via Claude iOS."""
-    if bodyweight is None and calories is None and protein is None:
-        raise click.UsageError("Provide at least one of --bodyweight, --calories, --protein")
-    entry = log_today(bodyweight_lb=bodyweight, calories_kcal=calories, protein_g=protein)
+@click.option("--fiber", type=float, help="Fiber (g)")
+def log_nutrition(bodyweight: float | None, calories: float | None, protein: float | None, fiber: float | None):
+    """Log today's nutrition (upsert). Use `hevy sync-health` to auto-pull from HealthKit."""
+    if bodyweight is None and calories is None and protein is None and fiber is None:
+        raise click.UsageError("Provide at least one of --bodyweight, --calories, --protein, --fiber")
+    entry = log_today(bodyweight_lb=bodyweight, calories_kcal=calories, protein_g=protein, fiber_g=fiber)
     click.echo(f"  Logged {entry['date']}: {entry}")
     maint = estimate_maintenance()
     if maint is not None:
@@ -255,6 +266,161 @@ def advance():
         click.echo(f"  Advanced to Block {state['current_block']}, Week {state['current_week_in_block']}/{block_len}")
 
     save_state(state)
+
+
+@cli.command()
+def dashboard():
+    """7-day summary: recovery, weight, nutrition, lifting, cardio."""
+    from datetime import datetime, timedelta, timezone
+
+    from rich.console import Console
+    from rich.table import Table
+
+    from .nutrition import _load_log, estimate_maintenance, is_lifting_day_today, protein_target_g
+
+    console = Console()
+    today = date.today()
+    today_ord = today.toordinal()
+    window_start_ord = today_ord - 6
+
+    profile = load_profile()
+    adj = get_recovery_adjustment()
+    nut = get_nutrition_adjustment()
+
+    # ── Today ───────────────────────────────────────────────────────────────
+    lift = is_lifting_day_today()
+    bw = nut.bodyweight_today or profile.get("bodyweight_lb")
+    target = protein_target_g(bw, lift) if bw else None
+
+    t = Table(title=f"Today — {today.isoformat()} ({'LIFT' if lift else 'REST'} day)", show_header=False)
+    t.add_column(style="cyan", width=14)
+    t.add_column()
+    t.add_row("Recovery", f"{adj.score:.0f} ({adj.band})  load x{adj.load_mult}  set delta {adj.set_delta:+d}")
+    if target and nut.protein_today is not None:
+        t.add_row("Protein", f"{nut.protein_today:.0f} / {target:.0f} g  (gap {max(0, target - nut.protein_today):.0f}g)")
+    elif target:
+        t.add_row("Protein", f"target {target:.0f} g (no intake logged)")
+    if nut.calories_today is not None and nut.maintenance_kcal is not None:
+        t.add_row("Calories", f"{nut.calories_today:.0f} / {nut.maintenance_kcal:.0f} kcal ({nut.deficit_kcal:+.0f})")
+    elif nut.calories_today is not None:
+        t.add_row("Calories", f"{nut.calories_today:.0f} kcal")
+    console.print(t)
+
+    # ── Weight (7d) ─────────────────────────────────────────────────────────
+    entries = _load_log()
+    window = [
+        e for e in entries
+        if window_start_ord <= date.fromisoformat(str(e["date"])).toordinal() <= today_ord
+    ]
+    weights = [(e["date"], e["bodyweight_lb"]) for e in window if e.get("bodyweight_lb") is not None]
+    wt = Table(title="Weight (7d)")
+    wt.add_column("Date"); wt.add_column("lb", justify="right")
+    for d, w in weights:
+        wt.add_row(str(d), f"{w:.1f}")
+    if not weights:
+        wt.add_row("—", "no data")
+    maint = estimate_maintenance()
+    if maint is not None:
+        wt.caption = f"maintenance ≈ {maint:.0f} kcal"
+    console.print(wt)
+
+    # ── Nutrition (7d) ──────────────────────────────────────────────────────
+    nt = Table(title="Nutrition (7d)")
+    nt.add_column("Date"); nt.add_column("kcal", justify="right"); nt.add_column("protein g", justify="right")
+    for e in window:
+        nt.add_row(
+            str(e["date"]),
+            f"{e['calories_kcal']:.0f}" if e.get("calories_kcal") is not None else "—",
+            f"{e['protein_g']:.0f}" if e.get("protein_g") is not None else "—",
+        )
+    if not window:
+        nt.add_row("—", "no data", "")
+    console.print(nt)
+
+    # ── Lifting (7d) ────────────────────────────────────────────────────────
+    lt = Table(title="Lifting (7d, Hevy)")
+    lt.add_column("Date"); lt.add_column("Title"); lt.add_column("Min", justify="right"); lt.add_column("Sets", justify="right")
+    try:
+        from .hevy_client import list_workouts
+        data = list_workouts(page=1, page_size=10)
+        workouts = data.get("workouts", data) if isinstance(data, dict) else []
+        if not isinstance(workouts, list):
+            workouts = []
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        rows = 0
+        for w in workouts:
+            start = w.get("start_time")
+            if not start:
+                continue
+            try:
+                dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            if dt < cutoff:
+                continue
+            end = w.get("end_time")
+            mins = "?"
+            if end:
+                try:
+                    dt_end = datetime.fromisoformat(end.replace("Z", "+00:00"))
+                    mins = f"{int((dt_end - dt).total_seconds() / 60)}"
+                except ValueError:
+                    pass
+            sets = sum(len(ex.get("sets", [])) for ex in w.get("exercises", []))
+            lt.add_row(dt.date().isoformat(), w.get("title", "?"), str(mins), str(sets))
+            rows += 1
+        if rows == 0:
+            lt.add_row("—", "no workouts", "", "")
+    except Exception as e:
+        lt.add_row("—", f"error: {e}", "", "")
+    console.print(lt)
+
+    # ── Cardio (7d, Strava) ─────────────────────────────────────────────────
+    ct = Table(title="Cardio (7d, Strava)")
+    ct.add_column("Date"); ct.add_column("Type"); ct.add_column("Name"); ct.add_column("Min", justify="right"); ct.add_column("kcal", justify="right")
+    try:
+        from .strava_client import list_recent_activities_with_calories
+        acts = list_recent_activities_with_calories(days=7)
+        if not acts:
+            ct.add_row("—", "no activities", "", "", "")
+        for a in acts:
+            start = a.get("start_date_local", "")[:10]
+            mins = f"{int(a.get('moving_time', 0) / 60)}"
+            kcal = f"{a['calories']:.0f}" if a.get("calories") else "—"
+            ct.add_row(start, a.get("type", "?"), a.get("name", "?")[:30], mins, kcal)
+    except Exception as e:
+        ct.add_row("—", "not connected", f"run `hevy strava-auth`  ({e})", "", "")
+    console.print(ct)
+
+
+@cli.command(name="sync-health")
+@click.option("--path", default=None, help="Path to Health Auto Export folder (defaults to iCloud).")
+@click.option("--days", default=7, help="How many recent days to sync.")
+def sync_health(path: str | None, days: int):
+    """Pull calories/protein/fiber/bodyweight from Health Auto Export JSON into nutrition_log.yaml."""
+    from .healthkit import sync_from_export
+
+    result = sync_from_export(export_dir=path, days=days)
+    if not result["found"]:
+        click.echo(f"  No Health Auto Export files found at: {result['searched']}")
+        click.echo("  Install Health Auto Export (iOS), enable daily JSON export to iCloud Drive,")
+        click.echo("  and export metrics: Dietary Energy, Protein, Fiber, Body Mass.")
+        return
+    click.echo(f"  Read from: {result['source']}")
+    for day, fields in sorted(result["days"].items()):
+        click.echo(f"    {day}: {fields}")
+    click.echo(f"  Updated {len(result['days'])} day(s).")
+
+
+@cli.command()
+@click.option("--port", default=8501, help="Streamlit port.")
+def web(port: int):
+    """Launch the Streamlit dashboard in a browser."""
+    import subprocess
+    from pathlib import Path
+
+    app = Path(__file__).parent / "web.py"
+    subprocess.run(["streamlit", "run", str(app), "--server.port", str(port)])
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ build/
 .env
 *.egg
 .whoop_tokens.json
+.strava_tokens.json
 config/recovery.yaml
 config/nutrition_log.yaml
 .mcp.json
