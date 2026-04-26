@@ -6,13 +6,30 @@ build/
 .venv/
 .env
 *.egg
-.whoop_tokens.json
-.strava_tokens.json
-config/recovery.yaml
-config/nutrition_log.yaml
 .mcp.json
 .DS_Store
+.claude/
 logs/
+exports/
+node_modules/
+scripts/com.hevy.*.plist
 *.jpeg
 *.jpg
 *.png
+
+# Auth tokens (local backend; in Supabase mode these live in auth_tokens table)
+.whoop_tokens.json
+.strava_tokens.json
+config/.mf_refresh_token
+
+# Per-user data (lives in Supabase for cloud deploys; locally these are caches)
+config/profile.yaml
+config/state.yaml
+config/recovery.yaml
+config/nutrition_log.yaml
+config/whoop_log.yaml
+config/doms_log.yaml
+config/mf_cache.yaml
+config/coach_log.jsonl
+config/coach_session.json
+config/pt_routine.yaml

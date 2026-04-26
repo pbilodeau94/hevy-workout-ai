@@ -293,11 +293,6 @@ glutes_hams:
     tag: compound
     secondary: [hamstrings, lower_back]
 
-  - id: "B8127AD1"
-    name: Lying Leg Curl (Machine)
-    tag: isolation
-    secondary: []
-
   - id: "11A123F3"
     name: Seated Leg Curl (Machine)
     tag: isolation

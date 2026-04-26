@@ -18,13 +18,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from pathlib import Path
 
-import yaml
-
-from .config import CONFIG_DIR
-
-RECOVERY_FILE = CONFIG_DIR / "recovery.yaml"
+from . import store
 
 
 @dataclass
@@ -66,9 +61,7 @@ def _read_manual() -> RecoveryAdjustment | None:
         sleep_hours: 7.4           # optional
         notes: "felt good"         # optional
     """
-    if not RECOVERY_FILE.exists():
-        return None
-    data = yaml.safe_load(RECOVERY_FILE.read_text()) or {}
+    data = store.get("recovery") or {}
     if "recovery_score" not in data:
         return None
     file_date = data.get("date")
@@ -139,3 +132,5 @@ def get_recovery_adjustment() -> RecoveryAdjustment:
         source=base.source,
         note=base.note + " | nutrition: " + (", ".join(bits) if bits else "ok"),
     )
+
+

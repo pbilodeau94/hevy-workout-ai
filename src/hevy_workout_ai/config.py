@@ -14,6 +14,10 @@ def load_yaml(name: str) -> dict:
 
 
 def load_profile() -> dict:
+    from . import store
+    p = store.get("profile")
+    if p is not None:
+        return p
     return load_yaml("profile.yaml")
 
 
@@ -26,10 +30,14 @@ def load_programs() -> dict:
 
 
 def load_state() -> dict:
-    return load_yaml("state.yaml")
+    from . import store
+    return store.get("state") or {}
+
+
+def load_pt_routine() -> dict:
+    return load_yaml("pt_routine.yaml")
 
 
 def save_state(state: dict) -> None:
-    path = CONFIG_DIR / "state.yaml"
-    with open(path, "w") as f:
-        yaml.dump(state, f, default_flow_style=False, sort_keys=False)
+    from . import store
+    store.set("state", state)

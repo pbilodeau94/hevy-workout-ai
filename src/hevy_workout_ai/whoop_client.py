@@ -13,26 +13,24 @@ After that, `get_recovery()` auto-refreshes and returns today's recovery score.
 from __future__ import annotations
 
 import http.server
-import json
 import os
 import socketserver
 import threading
 import urllib.parse
 import webbrowser
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
+
+from . import store
 
 load_dotenv()
 
 AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth"
 TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
 API_BASE = "https://api.prod.whoop.com/developer/v2"
-SCOPES = "read:recovery read:cycles read:sleep offline"
-
-TOKEN_FILE = Path(__file__).resolve().parent.parent.parent / ".whoop_tokens.json"
+SCOPES = "read:recovery read:cycles read:sleep read:workout offline"
 
 
 def _env(key: str) -> str:
@@ -44,13 +42,14 @@ def _env(key: str) -> str:
 
 def _save_tokens(data: dict) -> None:
     data["fetched_at"] = datetime.now(timezone.utc).isoformat()
-    TOKEN_FILE.write_text(json.dumps(data, indent=2))
+    store.set_tokens("whoop", data)
 
 
 def _load_tokens() -> dict:
-    if not TOKEN_FILE.exists():
+    tokens = store.get_tokens("whoop")
+    if not tokens:
         raise RuntimeError("No Whoop tokens. Run `hevy-ai whoop-auth` first.")
-    return json.loads(TOKEN_FILE.read_text())
+    return tokens
 
 
 def _is_expired(tokens: dict) -> bool:
@@ -159,7 +158,19 @@ def authorize() -> None:
     )
     resp.raise_for_status()
     _save_tokens(resp.json())
-    print(f"Tokens saved to {TOKEN_FILE}")
+    print("Whoop tokens saved.")
+
+
+def get_recovery_records(limit: int = 25) -> list[dict]:
+    """Return up to `limit` recent recovery records (newest first)."""
+    data = _get("/recovery", params={"limit": limit})
+    return data.get("records", []) or []
+
+
+def get_sleep_records(limit: int = 25) -> list[dict]:
+    """Return up to `limit` recent sleep records (newest first)."""
+    data = _get("/activity/sleep", params={"limit": limit})
+    return data.get("records", []) or []
 
 
 def get_latest_recovery() -> dict | None:
@@ -183,3 +194,51 @@ def get_latest_recovery() -> dict | None:
     data = _get("/recovery", params={"limit": 1})
     records = data.get("records", [])
     return records[0] if records else None
+
+
+def get_workout_records(start: datetime | None = None, max_pages: int = 40) -> list[dict]:
+    """Return Whoop per-workout records (newest first), paginated.
+
+    Each record exposes `score.strain` (0–21) for the workout window plus
+    `start`/`end` ISO timestamps — used to match lifts logged in Hevy that
+    have no HR data of their own.
+    """
+    out: list[dict] = []
+    params: dict = {"limit": 25}
+    if start is not None:
+        params["start"] = start.isoformat().replace("+00:00", "Z")
+    for _ in range(max_pages):
+        data = _get("/activity/workout", params=params)
+        records = data.get("records", []) or []
+        out.extend(records)
+        token = data.get("next_token")
+        if not token or not records:
+            break
+        params = {"limit": 25, "nextToken": token}
+        if start is not None:
+            params["start"] = start.isoformat().replace("+00:00", "Z")
+    return out
+
+
+def get_cycle_records(start: datetime | None = None, max_pages: int = 20) -> list[dict]:
+    """Return Whoop daily cycles (newest first), paginated via next_token.
+
+    Each cycle covers one physiological day and exposes `score.strain` (0–21),
+    Whoop's HR-derived total daily load — captures lifts, walks, and rides
+    via continuous wrist HR without needing per-activity logging.
+    """
+    out: list[dict] = []
+    params: dict = {"limit": 25}
+    if start is not None:
+        params["start"] = start.isoformat().replace("+00:00", "Z")
+    for _ in range(max_pages):
+        data = _get("/cycle", params=params)
+        records = data.get("records", []) or []
+        out.extend(records)
+        token = data.get("next_token")
+        if not token or not records:
+            break
+        params = {"limit": 25, "nextToken": token}
+        if start is not None:
+            params["start"] = start.isoformat().replace("+00:00", "Z")
+    return out

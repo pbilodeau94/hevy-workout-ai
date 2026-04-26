@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import random
 
-from .config import load_exercises, load_profile, load_programs, load_state
+from .config import load_exercises, load_profile, load_programs, load_pt_routine, load_state
+from .doms import DomsState, adjustment_for as doms_adjustment_for, get_doms_state
+from .progression import LastSession, get_last_sessions, progression_multiplier
 from .recovery import RecoveryAdjustment, get_recovery_adjustment
 from .weight_estimator import estimate_weight, get_all_history, snap_to_increment
 
@@ -104,13 +106,28 @@ def _make_block_rng(block: int, day_key: str) -> random.Random:
     return random.Random(seed)
 
 
+def generate_pt_routine() -> dict:
+    """Build a standalone daily PT routine payload for Hevy."""
+    return {
+        "routine": {
+            "title": "PT Daily",
+            "folder_id": None,
+            "notes": "Daily PT routine (prescribed). Do every day.",
+            "exercises": _pt_exercises_block(),
+        }
+    }
+
+
 def generate_routine(
     day_key: str | None = None,
     *,
     use_history: bool = True,
     history_cache: dict[str, float] | None = None,
+    last_sessions: dict[str, LastSession] | None = None,
     block: int | None = None,
     recovery: RecoveryAdjustment | None = None,
+    doms: DomsState | None = None,
+    dumbbell_only: bool = False,
 ) -> dict:
     """Generate a Hevy routine payload for the next workout day.
 
@@ -145,21 +162,42 @@ def generate_routine(
     if recovery is None:
         recovery = get_recovery_adjustment()
 
+    if doms is None:
+        doms = get_doms_state()
+
     # Fetch history once
     history = history_cache if history_cache is not None else {}
     if use_history and not history:
         history = get_all_history()
+
+    last_sess = last_sessions if last_sessions is not None else {}
+    if use_history and not last_sess:
+        last_sess = get_last_sessions()
 
     tagged_exercises: list[tuple[str, dict]] = []
     used_ids: set[str] = set()
 
     for slot in day["exercises"]:
         muscle = slot["muscle"]
+        doms_adj = doms_adjustment_for(muscle, doms)
+        if doms_adj.skip:
+            continue
+
         pool = [e for e in exercises_db.get(muscle, []) if e["id"] not in used_ids]
         if not pool:
             pool = exercises_db.get(muscle, [])
         if not pool:
             continue
+
+        if dumbbell_only:
+            db_pool = [e for e in pool if "(Dumbbell)" in e.get("name", "") or "(Bodyweight)" in e.get("name", "")]
+            if db_pool:
+                pool = db_pool
+
+        if doms_adj.prefer_isolation:
+            iso = [e for e in pool if e.get("tag") == "isolation"]
+            if iso:
+                pool = iso
 
         picks = _pick_exercises(pool, slot["pick"], slot.get("prefer"), rng=rng)
         for p in picks:
@@ -172,23 +210,33 @@ def generate_routine(
             weight_kg = None
             source = None
 
+            prog_mult = 1.0
             if use_history:
                 weight_kg = estimate_weight(ex["id"], muscle, history)
                 if weight_kg is not None:
                     if ex["id"] in history:
                         source = "history"
+                        ls = last_sess.get(ex["id"])
+                        if ls is not None:
+                            prog_mult = progression_multiplier(ls, rep_lo, rep_hi)
                     else:
                         source = "estimated"
-                    weight_kg *= recovery.load_mult
+                    weight_kg *= recovery.load_mult * prog_mult * doms_adj.load_mult
                     weight_kg = snap_to_increment(weight_kg, increment_lb)
 
             if weight_kg is not None:
                 lb = round(weight_kg * KG_TO_LB, 1)
-                note = f"{'Last' if source == 'history' else 'Est'}: {lb} lb"
+                prog_tag = ""
+                if prog_mult > 1.0:
+                    prog_tag = " ↑"
+                elif prog_mult < 1.0:
+                    prog_tag = " ↓"
+                note = f"{'Last' if source == 'history' else 'Est'}: {lb} lb{prog_tag}"
             else:
                 note = None
 
             n_sets = max(2, slot["sets"] + recovery.set_delta)
+            n_sets = max(1, int(round(n_sets * doms_adj.set_mult)))
             sets = []
             for _ in range(n_sets):
                 sets.append({
@@ -212,10 +260,37 @@ def generate_routine(
         "routine": {
             "title": day["name"],
             "folder_id": None,
-            "notes": f"{day['focus']} | {phase.replace('_', ' ').title()} phase | Block {block} | {recovery.note}",
+            "notes": f"{day['focus']} | {phase.replace('_', ' ').title()} phase | Block {block} | {recovery.note} | DOMS: {doms.summary()}",
             "exercises": routine_exercises,
         }
     }
+
+
+def _pt_exercises_block() -> list[dict]:
+    """Return the PT-prescribed exercises as Hevy routine-exercise dicts."""
+    pt = load_pt_routine()
+    items = []
+    for ex in pt["exercises"]:
+        note_parts = ["PT"]
+        if ex.get("notes"):
+            note_parts.append(ex["notes"])
+        sets = [
+            {
+                "type": "normal",
+                "weight_kg": None,
+                "reps": ex["reps"],
+                "rep_range": None,
+            }
+            for _ in range(ex["sets"])
+        ]
+        items.append({
+            "exercise_template_id": ex["hevy_id"],
+            "superset_id": None,
+            "rest_seconds": 30,
+            "notes": " — ".join(note_parts),
+            "sets": sets,
+        })
+    return items
 
 
 def generate_week_routines(*, use_history: bool = True, block: int | None = None) -> list[dict]:
@@ -231,6 +306,7 @@ def generate_week_routines(*, use_history: bool = True, block: int | None = None
         block = state["current_block"]
 
     history = get_all_history() if use_history else {}
+    last_sess = get_last_sessions() if use_history else {}
     recovery = get_recovery_adjustment()
 
     rotation = program["rotation"]
@@ -240,7 +316,7 @@ def generate_week_routines(*, use_history: bool = True, block: int | None = None
         routines.append(
             generate_routine(
                 day_key, use_history=use_history, history_cache=history,
-                block=block, recovery=recovery,
+                last_sessions=last_sess, block=block, recovery=recovery,
             )
         )
 
@@ -248,12 +324,15 @@ def generate_week_routines(*, use_history: bool = True, block: int | None = None
 
 
 def _build_name_lookup() -> dict[str, str]:
-    """Build exercise_template_id -> name mapping from exercise DB."""
+    """Build exercise_template_id -> name mapping from exercise DB + PT routine."""
     db = load_exercises()
     lookup = {}
     for exercises in db.values():
         for ex in exercises:
             lookup[ex["id"]] = ex["name"]
+    for ex in load_pt_routine().get("exercises", []):
+        if ex.get("hevy_id"):
+            lookup[ex["hevy_id"]] = ex["name"]
     return lookup
 
 

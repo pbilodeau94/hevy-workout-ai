@@ -1,0 +1,62 @@
+# Per-user profile. On first run, copy to config/profile.yaml (local dev) OR
+# push into Supabase via:
+#   PYTHONPATH=src python -c "import yaml; from hevy_workout_ai import store; \
+#     store.set('profile', yaml.safe_load(open('config/profile.example.yaml')))"
+# Then customize via the dashboard or by re-pushing.
+
+unit_system: imperial  # imperial | metric
+
+macrofactor_email: you@example.com
+
+# Goal weight (lb) for protein-target math (1.0–1.2 g/lb of goal weight).
+goal_weight_lb: 160
+
+# Tags to avoid when generating routines (e.g. single_leg, balance, overhead).
+avoid_tags: []
+
+# Equipment available at your gym. See equipment.md for the canonical list.
+equipment:
+  - commercial_gym
+  - barbell
+  - dumbbells
+  - squat_rack
+  - flat_bench
+  - incline_bench
+  - cables
+  - lat_pulldown
+  - leg_press
+  - leg_extension
+  - leg_curl
+
+dumbbell_range:
+  min_lb: 5
+  max_lb: 120
+  increment_lb: 5
+
+smith_bar_weight_lb: null
+
+training:
+  days_per_week: 3
+  session_duration_minutes: 50
+  goal: hypertrophy
+  experience_level: intermediate
+  current_phase: upper_lower_full
+  phase_started_week: 1
+  sets_per_exercise: 3
+  rest:
+    upper_compound: 90
+    upper_isolation: 60
+    lower_compound: 120
+    lower_isolation: 60
+  rpe:
+    full_body: 7
+    upper_lower: 8
+    upper_lower_full: 8
+
+cardio:
+  days: [0, 2, 5]
+  default_duration_min: 45
+  long_ride_weekday: 5
+  long_ride_duration_min: 60
+  build_up_phase_weeks: 8
+  hour: 18

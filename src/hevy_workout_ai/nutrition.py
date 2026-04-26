@@ -16,11 +16,15 @@ from dataclasses import dataclass
 from datetime import date
 from statistics import mean
 
-import yaml
+from . import store
+from .config import load_profile, load_state
 
-from .config import CONFIG_DIR, load_profile, load_state
 
-NUTRITION_FILE = CONFIG_DIR / "nutrition_log.yaml"
+def _load_mf_cache() -> dict:
+    try:
+        return store.get("mf_cache") or {}
+    except Exception:
+        return {}
 
 KCAL_PER_LB = 3500.0
 MIN_DAYS_FOR_MAINTENANCE = 7
@@ -31,6 +35,9 @@ PROTEIN_REST_G_PER_LB = 0.95
 FIBER_G_PER_1000_KCAL = 14.0
 FIBER_DEFAULT_TARGET_G = 30.0
 DEFICIT_TRIGGER_KCAL = -600
+FALLBACK_AVERAGE_DAYS = 21
+FALLBACK_MIN_SAMPLES = 5
+FALLBACK_CALORIES_KCAL = 1900.0
 
 
 @dataclass
@@ -43,11 +50,14 @@ class NutritionAdjustment:
     bodyweight_today: float | None
     maintenance_kcal: float | None
     deficit_kcal: float | None
+    calorie_target_kcal: float | None
+    calorie_gap_kcal: float | None
     protein_target_g: float | None
     protein_gap_g: float | None
     fiber_target_g: float | None
     fiber_gap_g: float | None
     is_lifting_day: bool
+    estimated_fields: list[str]
 
 
 def _reference_weight_lb(bodyweight_lb: float | None = None) -> float | None:
@@ -84,15 +94,13 @@ def is_lifting_day_today() -> bool:
 
 
 def _load_log() -> list[dict]:
-    if not NUTRITION_FILE.exists():
-        return []
-    data = yaml.safe_load(NUTRITION_FILE.read_text()) or []
+    data = store.get("nutrition_log") or []
     return data if isinstance(data, list) else []
 
 
 def _save_log(entries: list[dict]) -> None:
     entries_sorted = sorted(entries, key=lambda e: e["date"])
-    NUTRITION_FILE.write_text(yaml.safe_dump(entries_sorted, sort_keys=False))
+    store.set("nutrition_log", entries_sorted)
 
 
 def log_today(
@@ -101,6 +109,7 @@ def log_today(
     calories_kcal: float | None = None,
     protein_g: float | None = None,
     fiber_g: float | None = None,
+    steps: int | None = None,
     on_date: str | None = None,
 ) -> dict:
     """Upsert an entry. Missing fields overwrite only if provided."""
@@ -119,6 +128,8 @@ def log_today(
         existing["protein_g"] = float(protein_g)
     if fiber_g is not None:
         existing["fiber_g"] = float(fiber_g)
+    if steps is not None:
+        existing["steps"] = int(steps)
 
     _save_log(entries)
     return existing
@@ -153,7 +164,12 @@ def _slope_lb_per_day(pts: list[tuple[int, float]]) -> float:
 
 
 def estimate_maintenance() -> float | None:
-    """Rolling maintenance kcal from intake + weight trend. None if insufficient data."""
+    """MF's adaptive TDEE if cached, else rolling estimate from intake + weight trend."""
+    cache = _load_mf_cache()
+    tdee = cache.get("tdee_kcal")
+    if tdee:
+        return float(tdee)
+
     entries = _load_log()
     today_ord = date.today().toordinal()
     window = [
@@ -173,8 +189,35 @@ def estimate_maintenance() -> float | None:
     return mean_kcal + slope * KCAL_PER_LB
 
 
+def _recent_average(entries: list[dict], field: str, *, days: int = FALLBACK_AVERAGE_DAYS,
+                    exclude_date: str | None = None) -> float | None:
+    """Mean of `field` over the trailing `days`, ignoring missing values and `exclude_date`."""
+    today_ord = date.today().toordinal()
+    vals: list[float] = []
+    for e in entries:
+        if exclude_date is not None and str(e.get("date")) == exclude_date:
+            continue
+        try:
+            d_ord = date.fromisoformat(str(e["date"])).toordinal()
+        except Exception:
+            continue
+        if today_ord - d_ord > days or d_ord > today_ord:
+            continue
+        v = e.get(field)
+        if v is None:
+            continue
+        vals.append(float(v))
+    if len(vals) < FALLBACK_MIN_SAMPLES:
+        return None
+    return mean(vals)
+
+
 def get_nutrition_adjustment() -> NutritionAdjustment:
-    """Stackable nutrition signal: protein + deficit → extra set deltas."""
+    """Stackable nutrition signal: protein + deficit → extra set deltas.
+
+    Falls back to rolling averages over the past ~3 weeks for any of
+    calories / protein / fiber missing from today's entry (e.g. MF didn't sync).
+    """
     entries = _load_log()
     today = date.today().isoformat()
     today_entry = next((e for e in entries if str(e.get("date")) == today), {})
@@ -184,12 +227,32 @@ def get_nutrition_adjustment() -> NutritionAdjustment:
     fib = today_entry.get("fiber_g")
     bw = today_entry.get("bodyweight_lb")
 
+    estimated: list[str] = []
+    if cal is None:
+        cal = FALLBACK_CALORIES_KCAL
+        estimated.append("calories")
+    if prot is None:
+        avg = _recent_average(entries, "protein_g", exclude_date=today)
+        if avg is not None:
+            prot = avg
+            estimated.append("protein")
+    if fib is None:
+        avg = _recent_average(entries, "fiber_g", exclude_date=today)
+        if avg is not None:
+            fib = avg
+            estimated.append("fiber")
+
     if bw is None:
         profile = load_profile()
         bw = profile.get("bodyweight_lb")
 
     maintenance = estimate_maintenance()
     deficit = (cal - maintenance) if (cal is not None and maintenance is not None) else None
+
+    mf = _load_mf_cache()
+    cal_target = mf.get("calorie_target_today_kcal")
+    cal_target = float(cal_target) if cal_target is not None else None
+    cal_gap = (cal_target - cal) if (cal_target is not None and cal is not None) else None
 
     lifting = is_lifting_day_today()
     ref = _reference_weight_lb(bw)
@@ -206,6 +269,9 @@ def get_nutrition_adjustment() -> NutritionAdjustment:
         set_delta -= 1
         notes.append(f"deficit {deficit:+.0f} kcal")
 
+    if estimated:
+        notes.append(f"est. from {FALLBACK_AVERAGE_DAYS}d avg: {', '.join(estimated)}")
+
     return NutritionAdjustment(
         set_delta=set_delta,
         notes=notes,
@@ -215,9 +281,12 @@ def get_nutrition_adjustment() -> NutritionAdjustment:
         bodyweight_today=bw,
         maintenance_kcal=maintenance,
         deficit_kcal=deficit,
+        calorie_target_kcal=cal_target,
+        calorie_gap_kcal=cal_gap,
         protein_target_g=target,
         protein_gap_g=gap,
         fiber_target_g=fib_target,
         fiber_gap_g=fib_gap,
         is_lifting_day=lifting,
+        estimated_fields=estimated,
     )

@@ -1,0 +1,8 @@
+{
+  "name": "hevy-workout-ai-mf-bridge",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@sjawhar/macrofactor-mcp": "^1.3.1"
+  }
+}

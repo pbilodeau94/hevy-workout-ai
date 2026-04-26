@@ -13,7 +13,6 @@ Peloton classes auto-sync to Strava as VirtualRide if you've linked them.
 from __future__ import annotations
 
 import http.server
-import json
 import os
 import socketserver
 import threading
@@ -21,10 +20,11 @@ import time as _time
 import urllib.parse
 import webbrowser
 from datetime import datetime, timezone
-from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
+
+from . import store
 
 load_dotenv()
 
@@ -32,8 +32,6 @@ AUTH_URL = "https://www.strava.com/oauth/authorize"
 TOKEN_URL = "https://www.strava.com/oauth/token"
 API_BASE = "https://www.strava.com/api/v3"
 SCOPES = "read,activity:read_all"
-
-TOKEN_FILE = Path(__file__).resolve().parent.parent.parent / ".strava_tokens.json"
 
 
 def _env(key: str) -> str:
@@ -44,13 +42,14 @@ def _env(key: str) -> str:
 
 
 def _save_tokens(data: dict) -> None:
-    TOKEN_FILE.write_text(json.dumps(data, indent=2))
+    store.set_tokens("strava", data)
 
 
 def _load_tokens() -> dict:
-    if not TOKEN_FILE.exists():
+    tokens = store.get_tokens("strava")
+    if not tokens:
         raise RuntimeError("No Strava tokens. Run `hevy strava-auth` first.")
-    return json.loads(TOKEN_FILE.read_text())
+    return tokens
 
 
 def _is_expired(tokens: dict) -> bool:
@@ -148,7 +147,7 @@ def authorize() -> None:
     )
     resp.raise_for_status()
     _save_tokens(resp.json())
-    print(f"Tokens saved to {TOKEN_FILE}")
+    print("Strava tokens saved.")
 
 
 CARDIO_TYPES = {"Ride", "VirtualRide", "Run", "VirtualRun", "Walk", "Hike", "Swim", "Rowing"}
@@ -167,6 +166,35 @@ def get_activity(activity_id: int | str) -> dict:
     """Full activity detail — includes calories, which the list endpoint omits."""
     data = _get(f"/activities/{activity_id}")
     return data if isinstance(data, dict) else {}
+
+
+def list_load_points(days: int = 120) -> list:
+    """Return LoadPoint rows (date, suffer_score) for Banister training-load math.
+
+    Activities without `suffer_score` (no HR recorded) are skipped. Strava's
+    suffer_score is HR-zone-weighted and maps onto TSS-like scales.
+
+    Lifting (WeightTraining) is excluded — that's sourced from Hevy tonnage via
+    hevy_load.list_load_points to avoid double-counting and to capture lifts
+    that didn't have a paired Watch workout.
+    """
+    from .training_load import LoadPoint
+
+    after = int(_time.time() - days * 86400)
+    data = _get("/athlete/activities", params={"after": after, "per_page": 200})
+    if not isinstance(data, list):
+        return []
+    out = []
+    for a in data:
+        if a.get("type") == "WeightTraining":
+            continue
+        score = a.get("suffer_score")
+        start = a.get("start_date_local") or a.get("start_date")
+        if score is None or not start:
+            continue
+        day = datetime.fromisoformat(start.replace("Z", "+00:00")).date()
+        out.append(LoadPoint(day=day, load=float(score), source="strava"))
+    return out
 
 
 def list_recent_activities_with_calories(days: int = 7) -> list[dict]:

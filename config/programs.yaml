@@ -76,8 +76,8 @@ upper_lower_full:
 
   lower:
     name: "Lower Body"
-    focus: "Quads, glutes, hamstrings, calves, core"
-    # 6 exercises, ~50 min (was 8 — trimmed for time budget)
+    focus: "Quads, glutes, hamstrings, core (calves covered by daily PT)"
+    # 5 exercises, ~50 min (calves dropped — covered by PT routine daily)
     exercises:
       - muscle: quads
         pick: 1
@@ -107,12 +107,6 @@ upper_lower_full:
         rep_range: [12, 15]
         rest_key: lower_isolation
 
-      - muscle: calves
-        pick: 1
-        sets: 3
-        rep_range: [10, 15]
-        rest_key: lower_isolation
-
       - muscle: core
         pick: 1
         sets: 3
@@ -121,8 +115,8 @@ upper_lower_full:
 
   full_body_upper_skewed:
     name: "Full Body (Upper-Skewed)"
-    focus: "Upper volume + light legs (legs taxed by Tue LB + cycling)"
-    # 7 exercises, ~50 min (was 10 — trimmed for time budget)
+    focus: "Upper volume + 1 LB compound (legs taxed by Tue LB + cycling)"
+    # 6 exercises, ~30-35 min
     exercises:
       - muscle: chest
         pick: 1
@@ -130,13 +124,6 @@ upper_lower_full:
         sets: 3
         rep_range: [8, 12]
         rest_key: upper_compound
-
-      - muscle: chest
-        pick: 1
-        prefer: [isolation]
-        sets: 3
-        rep_range: [10, 15]
-        rest_key: upper_isolation
 
       - muscle: back
         pick: 1
@@ -152,6 +139,13 @@ upper_lower_full:
         rep_range: [8, 12]
         rest_key: upper_compound
 
+      - muscle: quads
+        pick: 1
+        prefer: [compound]
+        sets: 3
+        rep_range: [8, 12]
+        rest_key: lower_compound
+
       - muscle: biceps
         pick: 1
         prefer: [isolation]
@@ -165,13 +159,6 @@ upper_lower_full:
         sets: 3
         rep_range: [10, 15]
         rest_key: upper_isolation
-
-      - muscle: glutes_hams
-        pick: 1
-        prefer: [isolation]
-        sets: 3
-        rep_range: [12, 15]
-        rest_key: lower_isolation
 
   # Training days (Tue=1, Thu=3, Sun=6) map to rotation in order:
   # Tue -> lower, Thu -> full_body_upper_skewed, Sun -> upper
