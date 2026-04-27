@@ -63,7 +63,10 @@ def _supa_request(method: str, path: str, **kwargs: Any) -> httpx.Response:
         **kwargs.pop("headers", {}),
     }
     r = httpx.request(method, url, headers=headers, timeout=15.0, **kwargs)
-    r.raise_for_status()
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"Supabase {method} {path} -> {r.status_code}: {r.text[:500]}"
+        )
     return r
 
 
