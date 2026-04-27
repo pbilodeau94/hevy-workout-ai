@@ -9,11 +9,18 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-# Streamlit Cloud injects secrets via st.secrets, not env vars. Promote the
-# [env] table into os.environ so Store + API clients pick them up unchanged.
+# Streamlit Cloud injects secrets via st.secrets, not env vars. Promote both
+# an [env] table and flat top-level scalar keys into os.environ so the Store
+# + API clients pick them up regardless of how secrets.toml is structured.
 try:
-    for _k, _v in dict(st.secrets.get("env", {})).items():
-        os.environ.setdefault(_k, str(_v))
+    _secrets = dict(st.secrets)
+    _env_table = _secrets.pop("env", None)
+    if _env_table:
+        for _k, _v in dict(_env_table).items():
+            os.environ.setdefault(_k, str(_v))
+    for _k, _v in _secrets.items():
+        if isinstance(_v, (str, int, float, bool)):
+            os.environ.setdefault(_k, str(_v))
 except (FileNotFoundError, st.errors.StreamlitSecretNotFoundError):
     pass
 
