@@ -446,7 +446,12 @@ c5.metric("Steps", f"{steps_today:,}" if steps_today is not None else "—",
 st.markdown("---")
 
 
-tab_fitness, tab_nutrition, tab_coach = st.tabs(["Fitness", "Nutrition", "Coach"])
+_show_coach = os.environ.get("SHOW_COACH", "0") == "1"
+if _show_coach:
+    tab_fitness, tab_nutrition, tab_coach = st.tabs(["Fitness", "Nutrition", "Coach"])
+else:
+    tab_fitness, tab_nutrition = st.tabs(["Fitness", "Nutrition"])
+    tab_coach = None
 
 
 with tab_fitness:
@@ -962,7 +967,8 @@ with tab_nutrition:
             st.info("No protein data.")
 
 
-with tab_coach:
+if tab_coach is not None:
+  with tab_coach:
     import asyncio
 
     from hevy_workout_ai.coach import PROACTIVE_BRIEFING, chat_stream, clear_session
