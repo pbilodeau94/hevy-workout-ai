@@ -39,7 +39,9 @@ st.set_page_config(page_title="Fitness Dashboard", page_icon="📊", layout="wid
 
 
 # Pull fresh data on each page load (once per session — survives reruns).
-if "_synced_at_load" not in st.session_state:
+# MF sync depends on macOS-only tools (`security`, `node`); skip on cloud
+# deploys where a separate Mac launchd job pushes nutrition into Supabase.
+if "_synced_at_load" not in st.session_state and os.environ.get("MF_SYNC_ENABLED", "1") == "1":
     st.session_state["_synced_at_load"] = True
     try:
         from hevy_workout_ai.mf_sync import sync_nutrition
