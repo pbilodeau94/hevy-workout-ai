@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+import os
 from datetime import date, datetime, timedelta, timezone
 
 import altair as alt
 import pandas as pd
 import streamlit as st
+
+# Streamlit Cloud injects secrets via st.secrets, not env vars. Promote the
+# [env] table into os.environ so Store + API clients pick them up unchanged.
+try:
+    for _k, _v in dict(st.secrets.get("env", {})).items():
+        os.environ.setdefault(_k, str(_v))
+except (FileNotFoundError, st.errors.StreamlitSecretNotFoundError):
+    pass
 
 from hevy_workout_ai.config import load_profile
 from hevy_workout_ai.nutrition import (
@@ -20,6 +29,16 @@ from hevy_workout_ai.recovery import get_recovery_adjustment
 
 # ── Page setup & theme ───────────────────────────────────────────────────────
 st.set_page_config(page_title="Fitness Dashboard", page_icon="📊", layout="wide")
+
+
+# Pull fresh data on each page load (once per session — survives reruns).
+if "_synced_at_load" not in st.session_state:
+    st.session_state["_synced_at_load"] = True
+    try:
+        from hevy_workout_ai.mf_sync import sync_nutrition
+        sync_nutrition(days=3)
+    except Exception as _e:
+        st.warning(f"MacroFactor sync failed: {_e}")
 
 st.markdown(
     """
